@@ -8,6 +8,9 @@ This library is react specific implementation of pdf.js that lets you render pdf
 npm install new-react-pdf
 ```
 
-```text
 Note: copy the `pdf.worker.mjs` file to your public folder from the `node_modules/pdfjs-dist/build/` folder.
+
+```text
+windows: copy node_modules/pdfjs-dist/build/pdf.worker.mjs public/
+linux/unix/mac: cp node_modules/pdfjs-dist/build/pdf.worker.mjs public/
 ```
