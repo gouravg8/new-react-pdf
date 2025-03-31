@@ -1,17 +1,20 @@
 import { GlobalWorkerOptions, PDFDocumentProxy, getDocument } from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
+import { ScrollableProps } from "../types";
 
 const worker = "/pdf.worker.mjs";
 GlobalWorkerOptions.workerSrc = worker;
 
-type Props = {
-  url: string;
-  scale?: number;
-  title?: string | React.ReactNode;
-  loading?: string | React.ReactNode;
-};
-
-function Scrollable({ url, scale = window.innerWidth / 500, title , loading}: Props) {
+function Scrollable({
+  url,
+  scale = window.innerWidth / 500,
+  title = "PDF Viewer",
+  loading,
+  titleStyle,
+  canvasStyle,
+  totalPagesStyle,
+  totalPagesCustomize,
+}: ScrollableProps) {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,9 +31,6 @@ function Scrollable({ url, scale = window.innerWidth / 500, title , loading}: Pr
       })
       .catch((error) => {
         console.error("Error loading PDF:", error);
-      })
-      .finally(() => {
-        setIsLoading(false);
       });
 
     return () => {
@@ -51,6 +51,7 @@ function Scrollable({ url, scale = window.innerWidth / 500, title , loading}: Pr
     // Clear container
     containerRef.current.innerHTML = "";
 
+    setIsLoading(true);
     // Render each page
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
       if (pdfDoc.numPages < pageNum) return;
@@ -87,24 +88,32 @@ function Scrollable({ url, scale = window.innerWidth / 500, title , loading}: Pr
         await page.render(renderContext).promise;
       } catch (error) {
         console.error(`Error rendering page ${pageNum}:`, error);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
   return (
     <div className="my-6">
-      <h1 className="font-semibold text-2xl text-center py-4">{title}</h1>
+      <h1 className={titleStyle || "font-semibold text-2xl text-center py-4"}>
+        {title}
+      </h1>
       {isLoading ? (
-       loading || <div className="text-center">Loading PDF...</div>
+        loading || <div className="text-center">Loading PDF...</div>
       ) : (
         <div
           ref={containerRef}
-          className="w-fit mx-auto max-h-[80vh] overflow-y-scroll"
+          className={
+            canvasStyle || "w-fit mx-auto max-h-[80vh] overflow-y-scroll"
+          }
         />
       )}
-      <div className="mt-4 text-center">
-        <span>Total Pages: {totalPages}</span>
-      </div>
+      {totalPagesCustomize || (
+        <div className={totalPagesStyle || "mt-4 text-center"}>
+          <span>Total Pages: {totalPages}</span>
+        </div>
+      )}
     </div>
   );
 }

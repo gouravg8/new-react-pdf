@@ -1,21 +1,9 @@
 import { GlobalWorkerOptions, PDFDocumentProxy, getDocument } from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
+import { SinglePageProps } from "../types";
 
 const worker = "/pdf.worker.mjs";
 GlobalWorkerOptions.workerSrc = worker;
-
-type Props = {
-  url: string;
-  scale?: number;
-  title?: string;
-  loading?: string | React.ReactNode;
-  canvasStyle?: string;
-  previousButtonStyle?: string;
-  nextButtonStyle?: string;
-  previousButtonText?: string;
-  nextButtonText?: string;
-  buttonsStyle?: string;
-};
 
 function SinglePage({
   url,
@@ -28,7 +16,7 @@ function SinglePage({
   previousButtonText,
   nextButtonText,
   buttonsStyle,
-}: Props) {
+}: SinglePageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
