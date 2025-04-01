@@ -1,5 +1,5 @@
 import { GlobalWorkerOptions, PDFDocumentProxy, getDocument } from "pdfjs-dist";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollableProps } from "../types";
 
 const worker = "/pdf.worker.mjs";
@@ -38,18 +38,19 @@ function Scrollable({
         pdfDocRef.current.destroy();
       }
     };
-  }, []);
+  }, [scale, outputScale]);
 
   useEffect(() => {
     scale = window.innerWidth / 800;
   }, [window.innerWidth]);
 
-  const renderAllPages = async () => {
+  const renderAllPages = useCallback(async () => {
     const pdfDoc = pdfDocRef.current;
-    if (!pdfDoc || !containerRef.current) return;
+
+    if (!pdfDoc) return;
 
     // Clear container
-    containerRef.current.innerHTML = "";
+    // containerRef.current.innerHTML = "";
 
     setIsLoading(true);
     // Render each page
@@ -71,7 +72,7 @@ function Scrollable({
         canvas.style.height = Math.floor(viewport.height) + "px";
 
         // Add to container
-        containerRef.current.appendChild(canvas);
+        containerRef.current?.appendChild(canvas);
 
         // Render page
         const transform =
@@ -92,7 +93,7 @@ function Scrollable({
         setIsLoading(false);
       }
     }
-  };
+  }, []);
 
   return (
     <div className="my-6">
@@ -104,9 +105,7 @@ function Scrollable({
       ) : (
         <div
           ref={containerRef}
-          className={
-            canvasStyle || "w-fit mx-auto max-h-[80vh] overflow-y-scroll"
-          }
+          className={canvasStyle || "w-fit mx-auto max-h-[80vh] overflow-y-scroll"}
         />
       )}
       {totalPagesCustomize || (
