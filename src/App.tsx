@@ -1,35 +1,15 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
+import Scrollable from "./Components/Scrollable";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Scrollable
+        url="https://podetaiilsbucket.s3.ap-southeast-2.amazonaws.com/DURATRAY/Design/15340..pdf?X-Amz-Expires=600000&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA36NRVXOJZ2OHO3VX%2F20250401%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Date=20250401T060833Z&X-Amz-SignedHeaders=host&X-Amz-Signature=03ea18268ff64e5609379cb294c5f22e61441ea87a6ef91f2b2dec18fdf62cf0"
+        scale={0.5}
+      />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
