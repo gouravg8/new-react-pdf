@@ -1,9 +1,14 @@
-type SinglePageProps = {
+// Base type for common properties
+type BasePdfProps = {
   url: string;
   scale?: number;
-  title?: string;
+  title?: React.ReactNode;
   loading?: string | React.ReactNode;
   canvasStyle?: string;
+};
+
+// Specific props for SinglePage component
+type SinglePageProps = BasePdfProps & {
   previousButtonStyle?: string;
   nextButtonStyle?: string;
   previousButtonText?: string;
@@ -11,15 +16,11 @@ type SinglePageProps = {
   buttonsStyle?: string;
 };
 
-type ScrollableProps = {
-  url: string;
-  scale?: number;
-  title?: React.ReactNode;
-  loading?: string | React.ReactNode;
+// Specific props for Scrollable component
+type ScrollableProps = BasePdfProps & {
   titleStyle?: string;
-  canvasStyle?: string;
   totalPagesStyle?: string;
   totalPagesCustomize?: React.ReactNode;
 };
 
-export type { SinglePageProps, ScrollableProps };
+export type { BasePdfProps, SinglePageProps, ScrollableProps };
