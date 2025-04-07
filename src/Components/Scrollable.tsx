@@ -45,17 +45,25 @@ function Scrollable({
 
 	const renderAllPages = useCallback(async () => {
 		const pdfDoc = pdfDocRef.current;
+		const oldScale = scale;
 
 		console.log("from renderAllPages", {
 			pdfDoc,
 			container: containerRef.current,
 		});
-		if (!pdfDoc || !containerRef.current) return;
+
+		if (
+			!pdfDoc ||
+			!containerRef.current ||
+			(oldScale !== scale && containerRef.current)
+		)
+			return;
 
 		// Clear container
-		if (containerRef.current) {
-			containerRef.current.innerHTML = "";
-		}
+		containerRef.current.innerHTML = "";
+
+		// document fragment to hold the rendered pages
+		const fragment = document.createDocumentFragment();
 
 		// Render each page
 		for (let pageNum = 1; pageNum <= (pdfDoc?.numPages ?? 0); pageNum++) {
@@ -75,9 +83,12 @@ function Scrollable({
 				canvas.height = Math.floor(viewport.height * outputScale);
 				canvas.style.width = `${Math.floor(viewport.width)}px`;
 				canvas.style.height = `${Math.floor(viewport.height)}px`;
+				canvas.style.display = "block";
+				canvas.style.margin = "0 auto"; // Center the canvas
 
 				// Add to container
-				containerRef.current?.appendChild(canvas);
+				// containerRef.current?.appendChild(canvas);
+				fragment.appendChild(canvas);
 
 				// Render page
 				const transform =
@@ -97,20 +108,20 @@ function Scrollable({
 			}
 		}
 
+		containerRef.current.appendChild(fragment); // Append all pages at once
 		setIsLoading(false);
 	}, []);
 
-	// Load PDF document
 	useEffect(() => {
 		const loadPdf = async () => {
 			try {
 				const pdf = await getDocument(url).promise;
-				(pdfDocRef as React.MutableRefObject<PDFDocumentProxy | null>).current =
-					pdf;
+				pdfDocRef.current = pdf;
 				setTotalPages(pdf.numPages);
-				renderAllPages();
+				renderAllPages(); // This will be called only once when PDF is loaded
 			} catch (error) {
 				console.error("Error loading PDF:", error);
+				setIsLoading(false);
 			}
 		};
 
@@ -121,28 +132,25 @@ function Scrollable({
 				pdfDocRef.current.destroy();
 			}
 		};
-	}, [renderAllPages, url]); // Only reload when URL or renderAllPages changes
+	}, [url, renderAllPages]); // Keep renderAllPages in dependencies
 
-	// Re-render when scale changes
-	// useEffect(() => {
-	// 	if (pdfDocRef.current && containerRef.current) {
-	// 		renderAllPages();
-	// 	}
-	// }, []);
+	useEffect(() => {
+		if (pdfDocRef.current && !isLoading) {
+			renderAllPages();
+		}
+	}, [scale]); // Only re-render when scale changes
 
 	return (
-		<div className="my-6 max-h-[100vh] overflow-y-scroll">
+		<div className="my-6 max-h-[90vh] overflow-y-scroll">
 			<h1 className={titleStyle || "font-semibold text-2xl text-center py-4"}>
 				{title}
 			</h1>
-			{isLoading ? (
-				loading || <div className="text-center">Loading PDF...</div>
-			) : (
-				<div
-					ref={containerRef}
-					className={canvasStyle || "w-fit mx-auto overflow-auto"}
-				/>
-			)}
+			{isLoading &&
+				(loading || <div className="text-center">Loading PDF...</div>)}
+			<div
+				ref={containerRef}
+				className={`${canvasStyle || "w-fit mx-auto overflow-auto"} ${isLoading ? "hidden" : ""}`}
+			/>
 			{totalPagesCustomize || (
 				<div className={totalPagesStyle || "mt-4 text-center"}>
 					<span>Total Pages: {totalPages}</span>
