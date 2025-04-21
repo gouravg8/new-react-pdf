@@ -1,13 +1,7 @@
-import {
-	GlobalWorkerOptions,
-	type PDFDocumentProxy,
-	getDocument,
-} from "pdfjs-dist";
+import { type PDFDocumentProxy, getDocument } from "pdfjs-dist";
 import { useEffect, useRef, useState } from "react";
 import type { SinglePageProps } from "../types";
-
-const worker = "/pdf.worker.mjs";
-GlobalWorkerOptions.workerSrc = worker;
+import { setupWorker } from "../setupWorker";
 
 function SinglePage({
 	url,
@@ -32,6 +26,16 @@ function SinglePage({
 
 	// Load the PDF document only once when component mounts
 	useEffect(() => {
+		// worker should only initialize once
+		setupWorker();
+	}, []);
+
+	// Effect to handle page changes
+	useEffect(() => {
+		if (pdfDocRef.current) {
+			queueRenderPage(currentPage);
+		}
+
 		getDocument(url)
 			.promise.then((pdf: PDFDocumentProxy) => {
 				pdfDocRef.current = pdf;
@@ -42,77 +46,59 @@ function SinglePage({
 				console.error("Error loading PDF:", error);
 			});
 
-		// Cleanup function
 		return () => {
 			if (pdfDocRef.current) {
 				pdfDocRef.current.destroy();
 			}
 		};
-	}, []);
+	}, [currentPage, url]);
 
-	// Effect to handle page changes
-	useEffect(() => {
-		if (pdfDocRef.current) {
-			queueRenderPage(currentPage);
-		}
-	}, [currentPage]);
-
-	const renderPage = (num: number) => {
+	const renderPage = async (num: number) => {
 		const pdfDoc = pdfDocRef.current;
 		if (!pdfDoc) return;
 
 		setIsLoading(true);
 
-		pdfDoc
-			.getPage(num)
-			.then((page) => {
-				const viewport = page.getViewport({ scale });
-				const canvas = canvasRef.current;
+		try {
+			const page = await pdfDoc.getPage(num);
 
-				if (canvas) {
-					const context = canvas.getContext("2d");
-					if (!context) return;
+			const viewport = page.getViewport({ scale });
+			const canvas = canvasRef.current;
 
-					canvas.width = Math.floor(viewport.width * outputScale);
-					canvas.height = Math.floor(viewport.height * outputScale);
-					canvas.style.width = `${Math.floor(viewport.width)}px`;
-					canvas.style.height = `${Math.floor(viewport.height)}px`;
+			if (canvas) {
+				const context = canvas.getContext("2d");
+				if (!context) return;
 
-					const transform =
-						outputScale !== 1
-							? [outputScale, 0, 0, outputScale, 0, 0]
-							: undefined;
+				canvas.width = Math.floor(viewport.width * outputScale);
+				canvas.height = Math.floor(viewport.height * outputScale);
+				canvas.style.width = `${Math.floor(viewport.width)}px`;
+				canvas.style.height = `${Math.floor(viewport.height)}px`;
 
-					const renderContext = {
-						canvasContext: context,
-						transform,
-						viewport,
-					};
+				const transform =
+					outputScale !== 1
+						? [outputScale, 0, 0, outputScale, 0, 0]
+						: undefined;
 
-					page
-						.render(renderContext)
-						.promise.then(() => {
-							if (pendingPage !== null && pendingPage !== num) {
-								const nextPage = pendingPage;
-								setPendingPage(null);
-								renderPage(nextPage);
-							}
-						})
-						.catch((error) => {
-							console.error("Error rendering page:", error);
-							setIsLoading(false);
-						})
-						.finally(() => {
-							setIsLoading(false);
-						});
+				const renderContext = {
+					canvasContext: context,
+					transform,
+					viewport,
+				};
+
+				// Render the page on the canvas
+				await page.render(renderContext).promise;
+
+				if (pendingPage !== null && pendingPage !== num) {
+					const nextPage = pendingPage;
+					setPendingPage(null);
+					renderPage(nextPage);
 				}
-			})
-			.catch((error) => {
-				console.error("Error getting page:", error);
-			})
-			.finally(() => {
-				setIsLoading(false);
-			});
+			}
+		} catch (error) {
+			console.error("Error getting page:", error);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	const queueRenderPage = (num: number) => {
